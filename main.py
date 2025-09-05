@@ -22,6 +22,7 @@ def get_post_urls(content):
     return url_list
 
 def add_post_content(url, ls):
+    print(url)
     comment_headers = {'user-agent': 'curl/8.15.0', 'x-requested-with': 'XMLHttpRequest'}
 
     content = client.get(url, headers=headers).text
@@ -31,6 +32,8 @@ def add_post_content(url, ls):
     comment_post_data = {}
 
     url_data = httpx.URL(url)
+    comment_page = 0
+
     comment_post_data['id'] = url_data.params.get('id')
     comment_post_data['cmt_id'] = url_data.params.get('id')
     comment_post_data['no'] = url_data.params.get('no')
@@ -39,25 +42,26 @@ def add_post_content(url, ls):
     comment_post_data['comment_page'] = '1'
     comment_post_data['sort'] = 'D'
     comment_post_data['_GALLTYPE_'] = 'G'
-    comments_response = client.post("https://gall.dcinside.com/board/comment/", headers=comment_headers, data=comment_post_data)
-    comments = json.loads(comments_response.text)
-    for cmt in comments['comments']:
-        if cmt['memo'][0] == "<":
-            continue
-        ls.append(cmt['memo'])
+
+    while True:
+        comment_page += 1
+        comment_post_data['comment_page'] = comment_page
+        comments_response = client.post("https://gall.dcinside.com/board/comment/", 
+                                        headers=comment_headers, data=comment_post_data)
+
+        if comments_response.status_code != 200:
+            break
+        comments = json.loads(comments_response.text)
+        if comments['comments'] == None:
+            break
+
+        for cmt in comments['comments']:
+            if cmt['memo'][0] == "<":
+                continue
+            ls.append(cmt['memo'])
 
     title_span = soup.css.select_one('span.title_subject')
     write_div = soup.css.select_one('div.write_div')
     content = title_span.get_text() + write_div.get_text()
+
     ls.append(content)
-
-ls = []
-urls = get_post_urls(fetch_timebest())
-urls.pop(0)
-for url in get_post_urls(fetch_timebest()):
-    add_post_content(url, ls)
-    if len(ls) > 300:
-        break
-
-for i in ls:
-    print(i)
