@@ -76,13 +76,13 @@ class DCBestFetcher:
 
         self.posts.append(post_object)
     
-    def save_posts_json(self):
+    def save_posts_json(self, file_name):
         self.fetch_timebest_page()
         self.get_post_urls()
         for url in self.url_list:
             self.add_post_content(url)
-        file = open("posts.json", 'w')
+        file = open(file_name, 'w')
         file.write(json.dumps(self.posts, ensure_ascii=False))
 
 fetcher = DCBestFetcher()
-fetcher.save_posts_json()
+fetcher.save_posts_json("./posts.json")
